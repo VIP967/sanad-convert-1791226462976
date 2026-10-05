@@ -1,0 +1,140 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>سانت كرافت</title></head><body style="padding:20px;background:#0a0a0f;color:#fff;font-family:sans-serif"><h1>سانت كرافت</h1><p></p><pre style="background:#111;padding:10px;border-radius:8px;overflow:auto">&lt;file name=&quot;app/build.gradle.kts&quot;&gt;
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    namespace = &quot;com.saint.craft&quot;
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = &quot;com.saint.craft&quot;
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName &quot;1.0.0&quot;
+
+        testInstrumentationRunner = &quot;androidx.test.runner.AndroidJUnitRunner&quot;
+        externalNativeBuild {
+            cmake {
+                cppFlags += &quot;-std=c++17 -O3 -fno-rtti -fno-exceptions&quot;
+                arguments += &quot;-DANDROID_STL=c++_shared&quot;
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile(&quot;proguard-android-optimize.txt&quot;),
+                &quot;proguard-rules.pro&quot;
+            )
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = &quot;17&quot;
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file(&quot;src/main/cpp/CMakeLists.txt&quot;)
+            version = &quot;3.22.1&quot;
+        }
+    }
+
+    buildFeatures {
+        viewBinding = true
+    }
+}
+
+dependencies {
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.google.android.material)
+    implementation(libs.androidx.constraintlayout)
+}
+&lt;/file&gt;
+
+&lt;file name=&quot;app/src/main/cpp/CMakeLists.txt&quot;&gt;
+cmake_minimum_required(VERSION 3.22.1)
+project(&quot;saintcraft&quot;)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_library(
+    saintcraft
+    SHARED
+    renderer.cpp
+    world.cpp
+    shader.cpp
+)
+
+find_library(
+    log-lib
+    log
+)
+
+find_library(
+    glesv2-lib
+    GLESv2
+)
+
+find_library(
+    android-lib
+    android
+)
+
+target_link_libraries(
+    saintcraft
+    ${log-lib}
+    ${glesv2-lib}
+    ${android-lib}
+)
+&lt;/file&gt;
+
+&lt;file name=&quot;app/src/main/cpp/shader.cpp&quot;&gt;
+#include &lt;GLES2/gl2.h&gt;
+#include &lt;string&gt;
+#include &lt;android/log.h&gt;
+
+class Shader {
+public:
+    GLuint program;
+
+    Shader(const char* vertexSource, const char* fragmentSource) {
+        GLuint vertex = compileShader(GL_VERTEX_SHADER, vertexSource);
+        GLuint fragment = compileShader(GL_FRAGMENT_SHADER, fragmentSource);
+
+        program = glCreateProgram();
+        glAttachShader(program, vertex);
+        glAttachShader(program, fragment);
+        glLinkProgram(program);
+
+        GLint success;
+        glGetProgramiv(program, GL_LINK_STATUS, &amp;success);
+        if (!success) {
+            char infoLog[512];
+            glGetProgramInfoLog(program, 512, NULL, infoLog);
+            __android_log_print(ANDROID_LOG_ERROR, &quot;SaintCraftShader&quot;, &quot;ERROR: %s&quot;, infoLog);
+        }
+
+        glDeleteShader(vertex);
+        glDeleteShader(fragment);
+    }
+
+    void use() {
+        glUseProgram(program);
+    }
+
+private:
+    GLuint compileShader(GLenum type, con</pre></body></html>
